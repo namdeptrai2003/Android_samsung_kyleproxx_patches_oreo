@@ -1,0 +1,56 @@
+diff -ur a/frameworks/opt/telephony/src/java/com/android/internal/telephony/Phone.java b/frameworks/opt/telephony/src/java/com/android/internal/telephony/Phone.java
+--- a/frameworks/opt/telephony/src/java/com/android/internal/telephony/Phone.java	2017-05-10 17:12:56.242797041 +0000
++++ b/frameworks/opt/telephony/src/java/com/android/internal/telephony/Phone.java	2017-05-10 17:25:08.194371428 +0000
+@@ -239,6 +239,7 @@
+     private boolean mDnsCheckDisabled;
+     public DcTracker mDcTracker;
+     private boolean mDoesRilSendMultipleCallRing;
++    private boolean mDoesRilSendCallRing;
+     private int mCallRingContinueToken;
+     private int mCallRingDelay;
+     private boolean mIsVoiceCapable = true;
+@@ -479,6 +480,10 @@
+         mDoesRilSendMultipleCallRing = SystemProperties.getBoolean(
+                 TelephonyProperties.PROPERTY_RIL_SENDS_MULTIPLE_CALL_RING, true);
+         Rlog.d(LOG_TAG, "mDoesRilSendMultipleCallRing=" + mDoesRilSendMultipleCallRing);
++        // Some RIL do not even send a single RIL_UNSOL_CALL_RING
++        mDoesRilSendCallRing = SystemProperties.getBoolean(
++                "ro.telephony.call_ring", true);
++        Rlog.d(LOG_TAG, "mDoesRilSendCallRing=" + mDoesRilSendCallRing);
+ 
+         mCallRingDelay = SystemProperties.getInt(
+                 TelephonyProperties.PROPERTY_CALL_RING_DELAY, 3000);
+@@ -2767,6 +2772,13 @@
+     public void notifyNewRingingConnectionP(Connection cn) {
+         if (!mIsVoiceCapable)
+             return;
++        // Fake RIL_UNSOL_CALL_RING if the RIL doesn't send it.
++        if (!mDoesRilSendCallRing) {
++            int token = ++mCallRingContinueToken;
++            sendMessageDelayed(
++                    obtainMessage(EVENT_CALL_RING_CONTINUE, token, 0), mCallRingDelay);
++        }
++
+         AsyncResult ar = new AsyncResult(null, cn, null);
+         mNewRingingConnectionRegistrants.notifyRegistrants(ar);
+     }
+@@ -3481,6 +3493,7 @@
+         pw.println(" mDnsCheckDisabled=" + mDnsCheckDisabled);
+         pw.println(" mDcTracker=" + mDcTracker);
+         pw.println(" mDoesRilSendMultipleCallRing=" + mDoesRilSendMultipleCallRing);
++        pw.println(" mDoesRilSendCallRing=" + mDoesRilSendCallRing);
+         pw.println(" mCallRingContinueToken=" + mCallRingContinueToken);
+         pw.println(" mCallRingDelay=" + mCallRingDelay);
+         pw.println(" mIsVoiceCapable=" + mIsVoiceCapable);
+diff -ur a/frameworks/opt/telephony/src/java/com/android/internal/telephony/RIL.java b/frameworks/opt/telephony/src/java/com/android/internal/telephony/RIL.java
+--- a/frameworks/opt/telephony/src/java/com/android/internal/telephony/RIL.java	2017-05-10 17:12:56.254797104 +0000
++++ b/frameworks/opt/telephony/src/java/com/android/internal/telephony/RIL.java	2017-05-10 17:25:08.194371428 +0000
+@@ -327,7 +327,7 @@
+     static final int RESPONSE_SOLICITED_ACK_EXP = 3;
+     static final int RESPONSE_UNSOLICITED_ACK_EXP = 4;
+ 
+-    static final String[] SOCKET_NAME_RIL = {"rild", "rild2", "rild3"};
++    static final String[] SOCKET_NAME_RIL = {"rild", "rild1", "rild2"};
+ 
+     static final int SOCKET_OPEN_RETRY_MILLIS = 4 * 1000;
+ 
