@@ -1,0 +1,30 @@
+diff -ur a/frameworks/native/libs/binder/Parcel.cpp b/frameworks/native/libs/binder/Parcel.cpp
+--- a/frameworks/native/libs/binder/Parcel.cpp	2017-05-10 17:12:55.854795015 +0000
++++ b/frameworks/native/libs/binder/Parcel.cpp	2017-05-10 17:25:08.126371247 +0000
+@@ -1082,6 +1082,12 @@
+     return writeString16(str.string(), str.size());
+ }
+ 
++extern "C" status_t _ZN7android6Parcel13writeString16EPKDsj(void *parcel, const char16_t* str, size_t len);
++
++extern "C" status_t _ZN7android6Parcel13writeString16EPKtj(void *parcel, const char16_t* str, size_t len) {
++   return _ZN7android6Parcel13writeString16EPKDsj(parcel, str, len);
++}
++
+ status_t Parcel::writeString16(const char16_t* str, size_t len)
+ {
+     if (str == NULL) return writeInt32(-1);
+diff -ur a/frameworks/native/services/surfaceflinger/SurfaceFlinger_hwc1.cpp b/frameworks/native/services/surfaceflinger/SurfaceFlinger_hwc1.cpp
+--- a/frameworks/native/services/surfaceflinger/SurfaceFlinger_hwc1.cpp	2017-05-10 17:12:55.854795015 +0000
++++ b/frameworks/native/services/surfaceflinger/SurfaceFlinger_hwc1.cpp	2017-05-10 17:25:08.194371428 +0000
+@@ -3727,6 +3727,10 @@
+         bool isLocalScreenshot, bool useReadPixels)
+ {
+     ATRACE_CALL();
++// Rotation artifact problems when useReadPixels is false
++#ifdef HAWAII_HWC
++    useReadPixels = true;
++#endif
+ 
+     // get screen geometry
+     uint32_t hw_w = hw->getWidth();
