@@ -2,7 +2,7 @@ echo $1
 rootdirectory="$PWD"
 # ---------------------------------
 
-dirs="Art Bionic Build Core Icu4c"
+dirs="Art Bionic Build Core Icu4c Framework/av Framework/base Framework/opt Framework/native Packages"
 
 for dir in $dirs ; do
 	cd $rootdirectory
