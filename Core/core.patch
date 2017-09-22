@@ -111,9 +111,7 @@ diff -Naur a/system/core/init/init.cpp b/system/core/init/init.cpp
  static selinux_enforcing_status selinux_status_from_cmdline() {
 -    selinux_enforcing_status status = SELINUX_ENFORCING;
 +    selinux_enforcing_status status = SELINUX_PERMISSIVE;
- 
-     import_kernel_cmdline(false, [&](const std::string& key, const std::string& value, bool in_qemu) {
-         if (key == "androidboot.selinux" && value == "permissive") {
+
 @@ -929,6 +929,24 @@
      sigaction(SIGTRAP, &action, nullptr);
  }
