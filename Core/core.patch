@@ -99,6 +99,7 @@ diff -Naur a/system/core/init/Android.mk b/system/core/init/Android.mk
 +)
 +
  LOCAL_MODULE:= init
+ LOCAL_STATIC_LIBRARIES := libbase
  LOCAL_C_INCLUDES += \
      system/core/mkbootimg
 diff -Naur a/system/core/init/init.cpp b/system/core/init/init.cpp
@@ -116,7 +117,6 @@ diff -Naur a/system/core/init/init.cpp b/system/core/init/init.cpp
 @@ -929,6 +929,24 @@
      sigaction(SIGTRAP, &action, nullptr);
  }
- 
 +static int charging_mode_booting(void) {
 +#ifndef BOARD_CHARGING_MODE_BOOTING_LPM
 +    return 0;
@@ -141,7 +141,7 @@ diff -Naur a/system/core/init/init.cpp b/system/core/init/init.cpp
 @@ -1118,7 +1136,7 @@
  
      // Don't mount filesystems or start core system services in charger mode.
-     std::string bootmode =  android::base::SetProperty("ro.bootmode", "");
+     std::string bootmode = SetProperty("ro.bootmode", "");
 -    if (bootmode == "charger") {
 +    if (bootmode == "charger" || charging_mode_booting()) {
          am.QueueEventTrigger("charger");
@@ -356,12 +356,14 @@ diff -Naur a/system/core/mkbootimg/unpackbootimg.c b/system/core/mkbootimg/unpac
 --- a/system/core/mkbootimg/unpackbootimg.c	1970-01-01 10:00:00.000000000 +1000
 +++ b/system/core/mkbootimg/unpackbootimg.c	2017-09-11 21:37:41.260335000 +1000
 @@ -0,0 +1,211 @@
++#include <android-base/properties.h>
 +#include <stdio.h>
 +#include <stdlib.h>
 +#include <string.h>
 +#include <unistd.h>
 +#include <fcntl.h>
 +#include <errno.h>
++using android::base::GetProperty;
 +#include <limits.h>
 +#include <libgen.h>
 +
