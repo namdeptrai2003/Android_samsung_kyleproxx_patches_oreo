@@ -141,7 +141,7 @@ diff -Naur a/system/core/init/init.cpp b/system/core/init/init.cpp
 @@ -1118,7 +1136,7 @@
  
      // Don't mount filesystems or start core system services in charger mode.
-     std::string bootmode = GetProperty("ro.bootmode", "");
+     std::string bootmode =  android::base::SetProperty("ro.bootmode", "");
 -    if (bootmode == "charger") {
 +    if (bootmode == "charger" || charging_mode_booting()) {
          am.QueueEventTrigger("charger");
